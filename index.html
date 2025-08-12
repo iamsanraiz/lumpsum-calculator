@@ -32,17 +32,27 @@
                         <!-- Investment Amount Mode Inputs -->
                         <div id="investmentInputs" class="input-group">
                             <div class="form-group">
-                                <label class="form-label">Lumpsum Amount: ₹<span id="lumpsumAmountValue">1,00,000</span></label>
-                                <input type="range" id="lumpsumAmount" class="slider" min="10000" max="10000000" step="10000" value="100000">
-                                <div class="slider-labels">
-                                    <span>₹10K</span>
-                                    <span>₹1Cr</span>
+                                <label class="form-label">Lumpsum Amount</label>
+                                <div class="input-with-slider">
+                                    <div class="text-input-wrapper">
+                                        <input type="text" id="lumpsumAmountText" class="form-control amount-input" placeholder="Enter amount" value="₹1,00,000">
+                                        <span class="input-error" id="lumpsumAmountError"></span>
+                                    </div>
+                                    <div class="slider-wrapper">
+                                        <input type="range" id="lumpsumAmount" class="slider" min="10000" max="10000000" step="1000" value="100000">
+                                        <div class="slider-labels">
+                                            <span>₹10K</span>
+                                            <span>₹1Cr</span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="preset-buttons">
                                     <button class="preset-btn" data-amount="50000">₹50K</button>
                                     <button class="preset-btn" data-amount="100000">₹1L</button>
                                     <button class="preset-btn" data-amount="500000">₹5L</button>
                                     <button class="preset-btn" data-amount="1000000">₹10L</button>
+                                    <button class="preset-btn" data-amount="2500000">₹25L</button>
+                                    <button class="preset-btn" data-amount="5000000">₹50L</button>
                                 </div>
                             </div>
                         </div>
@@ -50,31 +60,64 @@
                         <!-- Goal Amount Mode Inputs -->
                         <div id="goalInputs" class="input-group hidden">
                             <div class="form-group">
-                                <label class="form-label">Target Goal: ₹<span id="goalAmountValue">10,00,000</span></label>
-                                <input type="range" id="goalAmount" class="slider" min="100000" max="50000000" step="50000" value="1000000">
-                                <div class="slider-labels">
-                                    <span>₹1L</span>
-                                    <span>₹5Cr</span>
+                                <label class="form-label">Target Goal</label>
+                                <div class="input-with-slider">
+                                    <div class="text-input-wrapper">
+                                        <input type="text" id="goalAmountText" class="form-control amount-input" placeholder="Enter target amount" value="₹10,00,000">
+                                        <span class="input-error" id="goalAmountError"></span>
+                                    </div>
+                                    <div class="slider-wrapper">
+                                        <input type="range" id="goalAmount" class="slider" min="50000" max="100000000" step="10000" value="1000000">
+                                        <div class="slider-labels">
+                                            <span>₹50K</span>
+                                            <span>₹10Cr</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="preset-buttons">
+                                    <button class="preset-btn goal-preset" data-amount="500000">₹5L</button>
+                                    <button class="preset-btn goal-preset" data-amount="1000000">₹10L</button>
+                                    <button class="preset-btn goal-preset" data-amount="2500000">₹25L</button>
+                                    <button class="preset-btn goal-preset" data-amount="5000000">₹50L</button>
+                                    <button class="preset-btn goal-preset" data-amount="10000000">₹1Cr</button>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Common Inputs -->
                         <div class="form-group">
-                            <label class="form-label">Investment Period: <span id="periodValue">5</span> years</label>
-                            <input type="range" id="period" class="slider" min="1" max="30" value="5">
-                            <div class="slider-labels">
-                                <span>1 Year</span>
-                                <span>30 Years</span>
+                            <label class="form-label">Investment Period</label>
+                            <div class="input-with-slider">
+                                <div class="text-input-wrapper">
+                                    <input type="text" id="periodText" class="form-control number-input" placeholder="Enter years" value="5">
+                                    <span class="input-suffix">years</span>
+                                    <span class="input-error" id="periodError"></span>
+                                </div>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="period" class="slider" min="1" max="30" value="5">
+                                    <div class="slider-labels">
+                                        <span>1 Year</span>
+                                        <span>30 Years</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">Expected Annual Return: <span id="returnValue">12</span>%</label>
-                            <input type="range" id="expectedReturn" class="slider" min="5" max="20" step="0.5" value="12">
-                            <div class="slider-labels">
-                                <span>5%</span>
-                                <span>20%</span>
+                            <label class="form-label">Expected Annual Return</label>
+                            <div class="input-with-slider">
+                                <div class="text-input-wrapper">
+                                    <input type="text" id="returnText" class="form-control number-input" placeholder="Enter return rate" value="12">
+                                    <span class="input-suffix">%</span>
+                                    <span class="input-error" id="returnError"></span>
+                                </div>
+                                <div class="slider-wrapper">
+                                    <input type="range" id="expectedReturn" class="slider" min="5" max="25" step="0.1" value="12">
+                                    <div class="slider-labels">
+                                        <span>5%</span>
+                                        <span>25%</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -100,8 +143,21 @@
                                 </div>
                                 <div id="inflationOptions" class="inflation-options hidden">
                                     <div class="form-group">
-                                        <label class="form-label">Inflation Rate: <span id="inflationValue">6</span>%</label>
-                                        <input type="range" id="inflationRate" class="slider" min="3" max="10" step="0.5" value="6">
+                                        <label class="form-label">Inflation Rate</label>
+                                        <div class="input-with-slider">
+                                            <div class="text-input-wrapper">
+                                                <input type="text" id="inflationText" class="form-control number-input" placeholder="Enter inflation rate" value="6">
+                                                <span class="input-suffix">%</span>
+                                                <span class="input-error" id="inflationError"></span>
+                                            </div>
+                                            <div class="slider-wrapper">
+                                                <input type="range" id="inflationRate" class="slider" min="2" max="12" step="0.1" value="6">
+                                                <div class="slider-labels">
+                                                    <span>2%</span>
+                                                    <span>12%</span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -113,8 +169,21 @@
                                 </div>
                                 <div id="taxOptions" class="tax-options hidden">
                                     <div class="form-group">
-                                        <label class="form-label">Tax Rate on Gains: <span id="taxValue">20</span>%</label>
-                                        <input type="range" id="taxRate" class="slider" min="10" max="30" step="1" value="20">
+                                        <label class="form-label">Tax Rate on Gains</label>
+                                        <div class="input-with-slider">
+                                            <div class="text-input-wrapper">
+                                                <input type="text" id="taxText" class="form-control number-input" placeholder="Enter tax rate" value="20">
+                                                <span class="input-suffix">%</span>
+                                                <span class="input-error" id="taxError"></span>
+                                            </div>
+                                            <div class="slider-wrapper">
+                                                <input type="range" id="taxRate" class="slider" min="0" max="30" step="1" value="20">
+                                                <div class="slider-labels">
+                                                    <span>0%</span>
+                                                    <span>30%</span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -279,27 +348,27 @@
                         <div class="tips-grid">
                             <div class="tip-item">
                                 <div class="tip-icon">📈</div>
-                                <p>Lumpsum investments work best during market corrections</p>
+                                <p>Type exact amounts for precise calculations and use sliders for quick comparisons</p>
                             </div>
                             <div class="tip-item">
                                 <div class="tip-icon">⚖️</div>
-                                <p>Consider your risk tolerance before expecting high returns</p>
+                                <p>Consider inflation impact on long-term goals for realistic planning</p>
                             </div>
                             <div class="tip-item">
                                 <div class="tip-icon">🎯</div>
-                                <p>Diversify across asset classes for better risk management</p>
+                                <p>Higher compounding frequency increases returns over time</p>
                             </div>
                             <div class="tip-item">
                                 <div class="tip-icon">⏰</div>
-                                <p>Time in the market beats timing the market</p>
+                                <p>Factor in tax implications for accurate investment planning</p>
                             </div>
                             <div class="tip-item">
                                 <div class="tip-icon">💰</div>
-                                <p>Consider tax implications on your investment gains</p>
+                                <p>Lumpsum investments work best during market corrections</p>
                             </div>
                             <div class="tip-item">
                                 <div class="tip-icon">🔄</div>
-                                <p>Review and rebalance your portfolio periodically</p>
+                                <p>Use preset amounts for quick scenario testing</p>
                             </div>
                         </div>
                     </div>
