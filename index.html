@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World's Best Lumpsum Calculator</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <header class="header">
+            <h1 class="header__title">Lumpsum Investment Calculator</h1>
+            <p class="header__subtitle">Calculate your one-time investment growth with precision and advanced analytics</p>
+        </header>
+
+        <!-- Mode Selection -->
+        <div class="mode-selector">
+            <button id="investmentMode" class="mode-btn mode-btn--active">Investment Amount Mode</button>
+            <button id="goalMode" class="mode-btn">Goal Amount Mode</button>
+        </div>
+
+        <!-- Main Calculator Section -->
+        <div class="calculator-wrapper">
+            <div class="calculator-grid">
+                <!-- Input Section -->
+                <div class="card input-section">
+                    <div class="card__body">
+                        <h3 class="section-title">Investment Parameters</h3>
+                        
+                        <!-- Investment Amount Mode Inputs -->
+                        <div id="investmentInputs" class="input-group">
+                            <div class="form-group">
+                                <label class="form-label">Lumpsum Amount: ₹<span id="lumpsumAmountValue">1,00,000</span></label>
+                                <input type="range" id="lumpsumAmount" class="slider" min="10000" max="10000000" step="10000" value="100000">
+                                <div class="slider-labels">
+                                    <span>₹10K</span>
+                                    <span>₹1Cr</span>
+                                </div>
+                                <div class="preset-buttons">
+                                    <button class="preset-btn" data-amount="50000">₹50K</button>
+                                    <button class="preset-btn" data-amount="100000">₹1L</button>
+                                    <button class="preset-btn" data-amount="500000">₹5L</button>
+                                    <button class="preset-btn" data-amount="1000000">₹10L</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Goal Amount Mode Inputs -->
+                        <div id="goalInputs" class="input-group hidden">
+                            <div class="form-group">
+                                <label class="form-label">Target Goal: ₹<span id="goalAmountValue">10,00,000</span></label>
+                                <input type="range" id="goalAmount" class="slider" min="100000" max="50000000" step="50000" value="1000000">
+                                <div class="slider-labels">
+                                    <span>₹1L</span>
+                                    <span>₹5Cr</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Common Inputs -->
+                        <div class="form-group">
+                            <label class="form-label">Investment Period: <span id="periodValue">5</span> years</label>
+                            <input type="range" id="period" class="slider" min="1" max="30" value="5">
+                            <div class="slider-labels">
+                                <span>1 Year</span>
+                                <span>30 Years</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Expected Annual Return: <span id="returnValue">12</span>%</label>
+                            <input type="range" id="expectedReturn" class="slider" min="5" max="20" step="0.5" value="12">
+                            <div class="slider-labels">
+                                <span>5%</span>
+                                <span>20%</span>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Options -->
+                        <div class="advanced-options">
+                            <h4 class="options-title">Advanced Options</h4>
+                            
+                            <div class="option-item">
+                                <div class="form-group">
+                                    <label class="form-label">Compounding Frequency</label>
+                                    <select id="compoundingFreq" class="form-control">
+                                        <option value="1">Annually</option>
+                                        <option value="4">Quarterly</option>
+                                        <option value="12">Monthly</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="option-item">
+                                <div class="toggle-wrapper">
+                                    <input type="checkbox" id="inflationToggle" class="toggle-input">
+                                    <label for="inflationToggle" class="toggle-label">Adjust for Inflation</label>
+                                </div>
+                                <div id="inflationOptions" class="inflation-options hidden">
+                                    <div class="form-group">
+                                        <label class="form-label">Inflation Rate: <span id="inflationValue">6</span>%</label>
+                                        <input type="range" id="inflationRate" class="slider" min="3" max="10" step="0.5" value="6">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="option-item">
+                                <div class="toggle-wrapper">
+                                    <input type="checkbox" id="taxToggle" class="toggle-input">
+                                    <label for="taxToggle" class="toggle-label">Include Tax Impact</label>
+                                </div>
+                                <div id="taxOptions" class="tax-options hidden">
+                                    <div class="form-group">
+                                        <label class="form-label">Tax Rate on Gains: <span id="taxValue">20</span>%</label>
+                                        <input type="range" id="taxRate" class="slider" min="10" max="30" step="1" value="20">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button id="resetBtn" class="btn btn--outline">Reset</button>
+                            <button id="compareBtn" class="btn btn--secondary">Compare with SIP</button>
+                            <button id="exportBtn" class="btn btn--primary">Export Results</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div class="card results-section">
+                    <div class="card__body">
+                        <h3 class="section-title">Investment Summary</h3>
+                        
+                        <div class="result-cards">
+                            <div class="result-card">
+                                <div class="result-card__label">Initial Investment</div>
+                                <div class="result-card__value" id="initialInvestment">₹1,00,000</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="result-card__label">Estimated Gains</div>
+                                <div class="result-card__value result-card__value--success" id="estimatedGains">₹76,234</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="result-card__label">Maturity Amount</div>
+                                <div class="result-card__value result-card__value--primary" id="maturityAmount">₹1,76,234</div>
+                            </div>
+                            <div class="result-card hidden" id="inflationAdjustedCard">
+                                <div class="result-card__label">Real Value (Inflation Adj.)</div>
+                                <div class="result-card__value" id="inflationAdjustedValue">₹1,24,123</div>
+                            </div>
+                            <div class="result-card hidden" id="postTaxCard">
+                                <div class="result-card__label">Post-Tax Amount</div>
+                                <div class="result-card__value" id="postTaxValue">₹1,60,987</div>
+                            </div>
+                            <div class="result-card hidden" id="requiredLumpsumCard">
+                                <div class="result-card__label">Required Lumpsum</div>
+                                <div class="result-card__value result-card__value--primary" id="requiredLumpsumValue">₹56,743</div>
+                            </div>
+                        </div>
+
+                        <!-- Key Metrics -->
+                        <div class="metrics-section">
+                            <div class="metric-item">
+                                <span class="metric-label">Effective Annual Return:</span>
+                                <span class="metric-value" id="effectiveReturn">12.0%</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Total Return Percentage:</span>
+                                <span class="metric-value" id="totalReturnPercentage">76.2%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="charts-section">
+                <div class="chart-grid">
+                    <div class="card chart-card">
+                        <div class="card__body">
+                            <h4 class="chart-title">Investment Breakdown</h4>
+                            <div class="chart-container" style="position: relative; height: 300px;">
+                                <canvas id="pieChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card chart-card">
+                        <div class="card__body">
+                            <h4 class="chart-title">Wealth Growth Trajectory</h4>
+                            <div class="chart-container" style="position: relative; height: 300px;">
+                                <canvas id="lineChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Year-by-Year Breakdown -->
+            <div class="breakdown-section">
+                <div class="card">
+                    <div class="card__body">
+                        <h3 class="section-title">Year-by-Year Growth</h3>
+                        <div class="table-container">
+                            <table class="breakdown-table" id="breakdownTable">
+                                <thead>
+                                    <tr>
+                                        <th>Year</th>
+                                        <th>Opening Balance</th>
+                                        <th>Interest Earned</th>
+                                        <th>Closing Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Dynamic content -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comparison Section -->
+            <div class="comparison-section hidden" id="comparisonSection">
+                <div class="card">
+                    <div class="card__body">
+                        <h3 class="section-title">Lumpsum vs SIP Comparison</h3>
+                        <div class="comparison-grid">
+                            <div class="comparison-item">
+                                <h4>Lumpsum Investment</h4>
+                                <div class="comparison-value" id="lumpsumComparison">₹1,76,234</div>
+                                <p>One-time investment approach</p>
+                            </div>
+                            <div class="comparison-item">
+                                <h4>Equivalent SIP</h4>
+                                <div class="comparison-value" id="sipComparison">₹1,68,950</div>
+                                <p>Monthly SIP of ₹<span id="equivalentSIP">1,667</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Example Scenarios -->
+            <div class="scenarios-section">
+                <div class="card">
+                    <div class="card__body">
+                        <h3 class="section-title">Example Investment Scenarios</h3>
+                        <div class="scenario-grid">
+                            <div class="scenario-card" data-scenario="conservative">
+                                <h4 class="scenario-title">Conservative Growth</h4>
+                                <p class="scenario-desc">₹1L • 10 years • 8% returns</p>
+                                <div class="scenario-result">₹2.16L maturity</div>
+                                <small class="scenario-note">Low-risk, steady growth</small>
+                            </div>
+                            <div class="scenario-card" data-scenario="balanced">
+                                <h4 class="scenario-title">Balanced Portfolio</h4>
+                                <p class="scenario-desc">₹2L • 7 years • 12% returns</p>
+                                <div class="scenario-result">₹4.41L maturity</div>
+                                <small class="scenario-note">Moderate risk-return</small>
+                            </div>
+                            <div class="scenario-card" data-scenario="aggressive">
+                                <h4 class="scenario-title">Aggressive Growth</h4>
+                                <p class="scenario-desc">₹5L • 5 years • 15% returns</p>
+                                <div class="scenario-result">₹10.05L maturity</div>
+                                <small class="scenario-note">High risk, high returns</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Financial Tips -->
+            <div class="tips-section">
+                <div class="card">
+                    <div class="card__body">
+                        <h3 class="section-title">Investment Tips & Best Practices</h3>
+                        <div class="tips-grid">
+                            <div class="tip-item">
+                                <div class="tip-icon">📈</div>
+                                <p>Lumpsum investments work best during market corrections</p>
+                            </div>
+                            <div class="tip-item">
+                                <div class="tip-icon">⚖️</div>
+                                <p>Consider your risk tolerance before expecting high returns</p>
+                            </div>
+                            <div class="tip-item">
+                                <div class="tip-icon">🎯</div>
+                                <p>Diversify across asset classes for better risk management</p>
+                            </div>
+                            <div class="tip-item">
+                                <div class="tip-icon">⏰</div>
+                                <p>Time in the market beats timing the market</p>
+                            </div>
+                            <div class="tip-item">
+                                <div class="tip-icon">💰</div>
+                                <p>Consider tax implications on your investment gains</p>
+                            </div>
+                            <div class="tip-item">
+                                <div class="tip-icon">🔄</div>
+                                <p>Review and rebalance your portfolio periodically</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="disclaimer">
+                <p><strong>Disclaimer:</strong> This calculator provides estimates for educational purposes only. Past performance does not guarantee future results. Investment returns are subject to market risks. Please consult with a qualified financial advisor before making investment decisions.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
