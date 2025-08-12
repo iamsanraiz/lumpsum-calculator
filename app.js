@@ -2,6 +2,7 @@
 let currentMode = 'investment';
 let pieChart = null;
 let lineChart = null;
+let debounceTimer = null;
 
 // Default values from application data
 const defaultValues = {
@@ -12,6 +13,16 @@ const defaultValues = {
     goalAmount: 1000000,
     compoundingFrequency: 1,
     taxRate: 20
+};
+
+// Validation limits
+const validationLimits = {
+    lumpsumAmount: { min: 1000, max: 100000000 },
+    goalAmount: { min: 50000, max: 1000000000 },
+    period: { min: 1, max: 30 },
+    expectedReturn: { min: 5, max: 25 },
+    inflationRate: { min: 2, max: 12 },
+    taxRate: { min: 0, max: 30 }
 };
 
 // Chart colors
@@ -27,26 +38,36 @@ const elements = {
     investmentInputs: document.getElementById('investmentInputs'),
     goalInputs: document.getElementById('goalInputs'),
     
-    // Sliders and values
+    // Text inputs
+    lumpsumAmountText: document.getElementById('lumpsumAmountText'),
+    goalAmountText: document.getElementById('goalAmountText'),
+    periodText: document.getElementById('periodText'),
+    returnText: document.getElementById('returnText'),
+    inflationText: document.getElementById('inflationText'),
+    taxText: document.getElementById('taxText'),
+    
+    // Sliders
     lumpsumAmount: document.getElementById('lumpsumAmount'),
-    lumpsumAmountValue: document.getElementById('lumpsumAmountValue'),
     goalAmount: document.getElementById('goalAmount'),
-    goalAmountValue: document.getElementById('goalAmountValue'),
     period: document.getElementById('period'),
-    periodValue: document.getElementById('periodValue'),
     expectedReturn: document.getElementById('expectedReturn'),
-    returnValue: document.getElementById('returnValue'),
+    inflationRate: document.getElementById('inflationRate'),
+    taxRate: document.getElementById('taxRate'),
+    
+    // Error elements
+    lumpsumAmountError: document.getElementById('lumpsumAmountError'),
+    goalAmountError: document.getElementById('goalAmountError'),
+    periodError: document.getElementById('periodError'),
+    returnError: document.getElementById('returnError'),
+    inflationError: document.getElementById('inflationError'),
+    taxError: document.getElementById('taxError'),
     
     // Advanced options
     compoundingFreq: document.getElementById('compoundingFreq'),
     inflationToggle: document.getElementById('inflationToggle'),
     inflationOptions: document.getElementById('inflationOptions'),
-    inflationRate: document.getElementById('inflationRate'),
-    inflationValue: document.getElementById('inflationValue'),
     taxToggle: document.getElementById('taxToggle'),
     taxOptions: document.getElementById('taxOptions'),
-    taxRate: document.getElementById('taxRate'),
-    taxValue: document.getElementById('taxValue'),
     
     // Result displays
     initialInvestment: document.getElementById('initialInvestment'),
@@ -97,6 +118,95 @@ function formatNumber(num) {
 
 function formatPercentage(num, decimals = 1) {
     return `${num.toFixed(decimals)}%`;
+}
+
+function formatIndianCurrency(amount) {
+    const num = parseInt(amount);
+    if (isNaN(num)) return '₹0';
+    return `₹${num.toLocaleString('en-IN')}`;
+}
+
+function parseIndianCurrency(currencyString) {
+    if (!currencyString) return 0;
+    // Remove currency symbol, spaces, and commas
+    const cleanString = currencyString.replace(/[₹,\s]/g, '');
+    return parseInt(cleanString) || 0;
+}
+
+function validateNumber(value, min, max, fieldName) {
+    const num = parseFloat(value);
+    if (isNaN(num)) {
+        return { valid: false, error: `Please enter a valid number for ${fieldName}` };
+    }
+    if (num < min) {
+        return { valid: false, error: `${fieldName} should be at least ${min}` };
+    }
+    if (num > max) {
+        return { valid: false, error: `${fieldName} should not exceed ${max}` };
+    }
+    return { valid: true, value: num };
+}
+
+function showError(errorElement, textInput, message) {
+    errorElement.textContent = message;
+    errorElement.classList.add('show');
+    textInput.classList.add('error');
+}
+
+function hideError(errorElement, textInput) {
+    errorElement.classList.remove('show');
+    textInput.classList.remove('error');
+}
+
+function debounce(func, wait) {
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(debounceTimer);
+            func(...args);
+        };
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(later, wait);
+    };
+}
+
+// Input synchronization functions
+function syncTextToSlider(textInput, slider, formatter, parser) {
+    const value = parser ? parser(textInput.value) : parseFloat(textInput.value);
+    if (!isNaN(value)) {
+        slider.value = value;
+    }
+}
+
+function syncSliderToText(slider, textInput, formatter) {
+    const formattedValue = formatter(slider.value);
+    textInput.value = formattedValue;
+}
+
+// Validation functions
+function validateAmountInput(textInput, errorElement, min, max, fieldName) {
+    const value = parseIndianCurrency(textInput.value);
+    const validation = validateNumber(value, min, max, fieldName);
+    
+    if (!validation.valid) {
+        showError(errorElement, textInput, validation.error);
+        return false;
+    } else {
+        hideError(errorElement, textInput);
+        return true;
+    }
+}
+
+function validateNumberInput(textInput, errorElement, min, max, fieldName) {
+    const value = parseFloat(textInput.value);
+    const validation = validateNumber(value, min, max, fieldName);
+    
+    if (!validation.valid) {
+        showError(errorElement, textInput, validation.error);
+        return false;
+    } else {
+        hideError(errorElement, textInput);
+        return true;
+    }
 }
 
 // Lumpsum calculation functions
@@ -152,13 +262,13 @@ function calculateSIPFutureValue(monthlyAmount, rate, time) {
 
 // Main calculation function
 function performCalculations() {
-    const lumpsumAmount = parseInt(elements.lumpsumAmount.value);
-    const goalAmount = parseInt(elements.goalAmount.value);
-    const years = parseInt(elements.period.value);
-    const annualReturn = parseFloat(elements.expectedReturn.value);
+    const lumpsumAmount = parseIndianCurrency(elements.lumpsumAmountText.value);
+    const goalAmount = parseIndianCurrency(elements.goalAmountText.value);
+    const years = parseInt(elements.periodText.value) || parseInt(elements.period.value);
+    const annualReturn = parseFloat(elements.returnText.value) || parseFloat(elements.expectedReturn.value);
     const compoundingFreq = parseInt(elements.compoundingFreq.value);
-    const inflationRate = parseFloat(elements.inflationRate.value);
-    const taxRate = parseFloat(elements.taxRate.value);
+    const inflationRate = parseFloat(elements.inflationText.value) || parseFloat(elements.inflationRate.value);
+    const taxRate = parseFloat(elements.taxText.value) || parseFloat(elements.taxRate.value);
     
     const isInflationAdjusted = elements.inflationToggle.checked;
     const isTaxConsidered = elements.taxToggle.checked;
@@ -212,13 +322,17 @@ function performCalculations() {
         };
         
         // Update lumpsum amount display for goal mode
-        elements.lumpsumAmountValue.textContent = formatNumber(Math.round(requiredLumpsum));
+        elements.lumpsumAmountText.value = formatIndianCurrency(Math.round(requiredLumpsum));
+        elements.lumpsumAmount.value = Math.round(requiredLumpsum);
     }
     
     updateResultsDisplay(results);
     updateCharts(results);
     generateBreakdownTable(results);
 }
+
+// Debounced calculation function
+const debouncedCalculation = debounce(performCalculations, 300);
 
 // Update results display
 function updateResultsDisplay(results) {
@@ -301,8 +415,8 @@ function updatePieChart(results) {
 
 function updateLineChart(results) {
     const ctx = elements.lineChart.getContext('2d');
-    const years = parseInt(elements.period.value);
-    const annualReturn = parseFloat(elements.expectedReturn.value);
+    const years = parseInt(elements.periodText.value) || parseInt(elements.period.value);
+    const annualReturn = parseFloat(elements.returnText.value) || parseFloat(elements.expectedReturn.value);
     const compoundingFreq = parseInt(elements.compoundingFreq.value);
     const principal = results.initialInvestment;
     
@@ -378,8 +492,8 @@ function generateBreakdownTable(results) {
     const tbody = elements.breakdownTable.querySelector('tbody');
     tbody.innerHTML = '';
     
-    const years = parseInt(elements.period.value);
-    const annualReturn = parseFloat(elements.expectedReturn.value);
+    const years = parseInt(elements.periodText.value) || parseInt(elements.period.value);
+    const annualReturn = parseFloat(elements.returnText.value) || parseFloat(elements.expectedReturn.value);
     const compoundingFreq = parseInt(elements.compoundingFreq.value);
     const principal = results.initialInvestment;
     
@@ -402,9 +516,9 @@ function generateBreakdownTable(results) {
 
 // Comparison with SIP
 function showComparison() {
-    const lumpsumAmount = parseInt(elements.lumpsumAmount.value);
-    const years = parseInt(elements.period.value);
-    const annualReturn = parseFloat(elements.expectedReturn.value);
+    const lumpsumAmount = parseIndianCurrency(elements.lumpsumAmountText.value);
+    const years = parseInt(elements.periodText.value) || parseInt(elements.period.value);
+    const annualReturn = parseFloat(elements.returnText.value) || parseFloat(elements.expectedReturn.value);
     
     const lumpsumMaturity = calculateLumpsum(lumpsumAmount, annualReturn, years, 1);
     const equivalentMonthlySIP = lumpsumAmount / (years * 12);
@@ -420,40 +534,129 @@ function showComparison() {
     elements.comparisonSection.scrollIntoView({ behavior: 'smooth' });
 }
 
-// Event listeners
+// Event listeners setup
 function setupEventListeners() {
     // Mode switching
     elements.investmentModeBtn.addEventListener('click', () => switchMode('investment'));
     elements.goalModeBtn.addEventListener('click', () => switchMode('goal'));
     
-    // Slider inputs
+    // Lumpsum amount synchronization
+    elements.lumpsumAmountText.addEventListener('input', (e) => {
+        // Format the input as currency
+        const rawValue = parseIndianCurrency(e.target.value);
+        if (rawValue > 0) {
+            e.target.value = formatIndianCurrency(rawValue);
+            elements.lumpsumAmount.value = rawValue;
+        }
+        
+        // Validate and update
+        if (validateAmountInput(elements.lumpsumAmountText, elements.lumpsumAmountError, 
+            validationLimits.lumpsumAmount.min, validationLimits.lumpsumAmount.max, 'Lumpsum Amount')) {
+            debouncedCalculation();
+        }
+    });
+    
     elements.lumpsumAmount.addEventListener('input', (e) => {
-        elements.lumpsumAmountValue.textContent = formatNumber(e.target.value);
+        const value = parseInt(e.target.value);
+        elements.lumpsumAmountText.value = formatIndianCurrency(value);
+        hideError(elements.lumpsumAmountError, elements.lumpsumAmountText);
         performCalculations();
+    });
+    
+    // Goal amount synchronization
+    elements.goalAmountText.addEventListener('input', (e) => {
+        const rawValue = parseIndianCurrency(e.target.value);
+        if (rawValue > 0) {
+            e.target.value = formatIndianCurrency(rawValue);
+            elements.goalAmount.value = rawValue;
+        }
+        
+        if (validateAmountInput(elements.goalAmountText, elements.goalAmountError,
+            validationLimits.goalAmount.min, validationLimits.goalAmount.max, 'Goal Amount')) {
+            debouncedCalculation();
+        }
     });
     
     elements.goalAmount.addEventListener('input', (e) => {
-        elements.goalAmountValue.textContent = formatCurrency(parseInt(e.target.value));
+        const value = parseInt(e.target.value);
+        elements.goalAmountText.value = formatIndianCurrency(value);
+        hideError(elements.goalAmountError, elements.goalAmountText);
         performCalculations();
+    });
+    
+    // Period synchronization
+    elements.periodText.addEventListener('input', (e) => {
+        const value = parseInt(e.target.value);
+        if (!isNaN(value)) {
+            elements.period.value = value;
+        }
+        
+        if (validateNumberInput(elements.periodText, elements.periodError,
+            validationLimits.period.min, validationLimits.period.max, 'Investment Period')) {
+            debouncedCalculation();
+        }
     });
     
     elements.period.addEventListener('input', (e) => {
-        elements.periodValue.textContent = e.target.value;
+        elements.periodText.value = e.target.value;
+        hideError(elements.periodError, elements.periodText);
         performCalculations();
+    });
+    
+    // Return rate synchronization
+    elements.returnText.addEventListener('input', (e) => {
+        const value = parseFloat(e.target.value);
+        if (!isNaN(value)) {
+            elements.expectedReturn.value = value;
+        }
+        
+        if (validateNumberInput(elements.returnText, elements.returnError,
+            validationLimits.expectedReturn.min, validationLimits.expectedReturn.max, 'Expected Return')) {
+            debouncedCalculation();
+        }
     });
     
     elements.expectedReturn.addEventListener('input', (e) => {
-        elements.returnValue.textContent = e.target.value;
+        elements.returnText.value = e.target.value;
+        hideError(elements.returnError, elements.returnText);
         performCalculations();
+    });
+    
+    // Inflation rate synchronization
+    elements.inflationText.addEventListener('input', (e) => {
+        const value = parseFloat(e.target.value);
+        if (!isNaN(value)) {
+            elements.inflationRate.value = value;
+        }
+        
+        if (validateNumberInput(elements.inflationText, elements.inflationError,
+            validationLimits.inflationRate.min, validationLimits.inflationRate.max, 'Inflation Rate')) {
+            debouncedCalculation();
+        }
     });
     
     elements.inflationRate.addEventListener('input', (e) => {
-        elements.inflationValue.textContent = e.target.value;
+        elements.inflationText.value = e.target.value;
+        hideError(elements.inflationError, elements.inflationText);
         performCalculations();
     });
     
+    // Tax rate synchronization
+    elements.taxText.addEventListener('input', (e) => {
+        const value = parseFloat(e.target.value);
+        if (!isNaN(value)) {
+            elements.taxRate.value = value;
+        }
+        
+        if (validateNumberInput(elements.taxText, elements.taxError,
+            validationLimits.taxRate.min, validationLimits.taxRate.max, 'Tax Rate')) {
+            debouncedCalculation();
+        }
+    });
+    
     elements.taxRate.addEventListener('input', (e) => {
-        elements.taxValue.textContent = e.target.value;
+        elements.taxText.value = e.target.value;
+        hideError(elements.taxError, elements.taxText);
         performCalculations();
     });
     
@@ -480,12 +683,25 @@ function setupEventListeners() {
     });
     
     // Preset buttons
-    const presetButtons = document.querySelectorAll('.preset-btn');
+    const presetButtons = document.querySelectorAll('.preset-btn:not(.goal-preset)');
     presetButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
             const amount = parseInt(e.target.getAttribute('data-amount'));
+            elements.lumpsumAmountText.value = formatIndianCurrency(amount);
             elements.lumpsumAmount.value = amount;
-            elements.lumpsumAmountValue.textContent = formatNumber(amount);
+            hideError(elements.lumpsumAmountError, elements.lumpsumAmountText);
+            performCalculations();
+        });
+    });
+    
+    // Goal preset buttons
+    const goalPresetButtons = document.querySelectorAll('.goal-preset');
+    goalPresetButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const amount = parseInt(e.target.getAttribute('data-amount'));
+            elements.goalAmountText.value = formatIndianCurrency(amount);
+            elements.goalAmount.value = amount;
+            hideError(elements.goalAmountError, elements.goalAmountText);
             performCalculations();
         });
     });
@@ -503,6 +719,14 @@ function setupEventListeners() {
             loadScenario(scenario);
         });
     });
+    
+    // Mobile optimization - set inputmode for numeric inputs
+    elements.lumpsumAmountText.setAttribute('inputmode', 'numeric');
+    elements.goalAmountText.setAttribute('inputmode', 'numeric');
+    elements.periodText.setAttribute('inputmode', 'numeric');
+    elements.returnText.setAttribute('inputmode', 'decimal');
+    elements.inflationText.setAttribute('inputmode', 'decimal');
+    elements.taxText.setAttribute('inputmode', 'numeric');
 }
 
 // Mode switching
@@ -537,12 +761,17 @@ function loadScenario(scenarioType) {
     
     const scenario = scenarios[scenarioType];
     if (scenario) {
+        elements.lumpsumAmountText.value = formatIndianCurrency(scenario.amount);
         elements.lumpsumAmount.value = scenario.amount;
-        elements.lumpsumAmountValue.textContent = formatNumber(scenario.amount);
+        elements.periodText.value = scenario.period;
         elements.period.value = scenario.period;
-        elements.periodValue.textContent = scenario.period;
+        elements.returnText.value = scenario.return;
         elements.expectedReturn.value = scenario.return;
-        elements.returnValue.textContent = scenario.return;
+        
+        // Clear any errors
+        hideError(elements.lumpsumAmountError, elements.lumpsumAmountText);
+        hideError(elements.periodError, elements.periodText);
+        hideError(elements.returnError, elements.returnText);
         
         // Reset toggles
         elements.inflationToggle.checked = false;
@@ -565,20 +794,30 @@ function loadScenario(scenarioType) {
 
 // Reset calculator
 function resetCalculator() {
-    // Reset to default values
+    // Reset text inputs
+    elements.lumpsumAmountText.value = formatIndianCurrency(defaultValues.lumpsumAmount);
+    elements.goalAmountText.value = formatIndianCurrency(defaultValues.goalAmount);
+    elements.periodText.value = defaultValues.investmentPeriod;
+    elements.returnText.value = defaultValues.expectedReturn;
+    elements.inflationText.value = defaultValues.inflationRate;
+    elements.taxText.value = defaultValues.taxRate;
+    
+    // Reset sliders
     elements.lumpsumAmount.value = defaultValues.lumpsumAmount;
-    elements.lumpsumAmountValue.textContent = formatNumber(defaultValues.lumpsumAmount);
     elements.goalAmount.value = defaultValues.goalAmount;
-    elements.goalAmountValue.textContent = formatCurrency(defaultValues.goalAmount);
     elements.period.value = defaultValues.investmentPeriod;
-    elements.periodValue.textContent = defaultValues.investmentPeriod;
     elements.expectedReturn.value = defaultValues.expectedReturn;
-    elements.returnValue.textContent = defaultValues.expectedReturn;
     elements.inflationRate.value = defaultValues.inflationRate;
-    elements.inflationValue.textContent = defaultValues.inflationRate;
     elements.taxRate.value = defaultValues.taxRate;
-    elements.taxValue.textContent = defaultValues.taxRate;
     elements.compoundingFreq.value = defaultValues.compoundingFrequency;
+    
+    // Clear all errors
+    hideError(elements.lumpsumAmountError, elements.lumpsumAmountText);
+    hideError(elements.goalAmountError, elements.goalAmountText);
+    hideError(elements.periodError, elements.periodText);
+    hideError(elements.returnError, elements.returnText);
+    hideError(elements.inflationError, elements.inflationText);
+    hideError(elements.taxError, elements.taxText);
     
     // Reset toggles
     elements.inflationToggle.checked = false;
@@ -596,15 +835,15 @@ function exportResults() {
     // Simulate export functionality
     const mode = currentMode === 'investment' ? 'Investment Amount' : 'Goal Amount';
     const amount = currentMode === 'investment' ? 
-        formatCurrency(parseInt(elements.lumpsumAmount.value)) : 
-        formatCurrency(parseInt(elements.goalAmount.value));
+        elements.lumpsumAmountText.value : 
+        elements.goalAmountText.value;
     
     alert(`Export functionality would generate a comprehensive PDF report with:
     
 • ${mode} Mode Analysis
 • Investment Amount: ${amount}
-• Period: ${elements.period.value} years
-• Expected Return: ${elements.expectedReturn.value}%
+• Period: ${elements.periodText.value || elements.period.value} years
+• Expected Return: ${elements.returnText.value || elements.expectedReturn.value}%
 • Detailed year-by-year breakdown
 • Interactive charts and graphs
 • Risk analysis and recommendations
